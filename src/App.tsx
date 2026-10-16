@@ -13,6 +13,11 @@ import { SubmitResultModal } from './components/SubmitResultModal';
 import { AchievementSystem } from './components/AchievementSystem';
 import { getSavedQuestions, saveQuestions } from './utils/spreadsheetParser';
 import { sound } from './utils/audio';
+
+// Import aset gambar agar otomatis terdeteksi dengan benar oleh Vite / GitHub Pages
+import titleBannerImg from './assets/images/pvz_title_banner_1792131025537.jpg';
+import gardenLawnImg from './assets/images/pvz_garden_lawn_1792131024837.jpg';
+
 import { 
   Play, 
   Trophy, 
@@ -21,7 +26,6 @@ import {
   Volume2, 
   VolumeX, 
   Send,
-  KeyRound,
   GraduationCap,
   Sparkles,
   User,
@@ -31,8 +35,7 @@ import {
   Minimize2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import titleBannerImg from './assets/images/pvz_title_banner_1792131025537.jpg';
-import gardenLawnImg from './assets/images/pvz_garden_lawn_1792131024837.jpg';
+
 export default function App() {
   const [screen, setScreen] = useState<GameScreen>('TITLE');
   const [questions, setQuestions] = useState<Question[]>(() => getSavedQuestions());
@@ -153,7 +156,7 @@ export default function App() {
         <div 
           className="relative w-full h-full flex flex-col items-center justify-between p-4 sm:p-8 overflow-y-auto"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(15,23,42,0.7), rgba(12,10,9,0.9)), url('/src/assets/images/pvz_title_banner_1792131025537.jpg')`,
+            backgroundImage: `linear-gradient(to bottom, rgba(15,23,42,0.7), rgba(12,10,9,0.9)), url(${titleBannerImg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
@@ -275,7 +278,7 @@ export default function App() {
         <div 
           className="relative w-full h-full flex items-center justify-center p-3 sm:p-6 bg-stone-950/90 overflow-y-auto"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(16,185,129,0.2), rgba(0,0,0,0.85)), url('/src/assets/images/pvz_garden_lawn_1792131024837.jpg')`,
+            backgroundImage: `linear-gradient(to bottom, rgba(16,185,129,0.2), rgba(0,0,0,0.85)), url(${gardenLawnImg})`,
             backgroundSize: 'cover'
           }}
         >
@@ -296,7 +299,7 @@ export default function App() {
               </p>
             </div>
 
-            {/* Scorecard breakdown: Soal yang bisa dikerjakan, zombi, matahari */}
+            {/* Scorecard breakdown */}
             <div className="w-full grid grid-cols-3 gap-2 p-3 bg-stone-950/80 rounded-2xl border border-stone-800 text-center">
               <div>
                 <span className="text-[11px] text-stone-400 block">Soal Dikerjakan</span>
@@ -374,7 +377,7 @@ export default function App() {
         <div 
           className="relative w-full h-full flex items-center justify-center p-4 sm:p-6 bg-stone-950/90"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(220,38,38,0.3), rgba(0,0,0,0.9)), url('/src/assets/images/pvz_title_banner_1792131025537.jpg')`,
+            backgroundImage: `linear-gradient(to bottom, rgba(220,38,38,0.3), rgba(0,0,0,0.9)), url(${titleBannerImg})`,
             backgroundSize: 'cover'
           }}
         >
@@ -395,7 +398,7 @@ export default function App() {
               </p>
             </div>
 
-            {/* Scorecard: Soal, Zombi, Matahari */}
+            {/* Scorecard */}
             <div className="w-full grid grid-cols-3 gap-2 p-3.5 bg-stone-950/80 rounded-2xl border border-stone-800 text-center">
               <div>
                 <span className="text-[11px] text-stone-400 block">Soal Dikerjakan</span>
