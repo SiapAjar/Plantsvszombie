@@ -48,6 +48,9 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+// Import aset gambar latar belakang taman agar terbaca dengan benar di GitHub Pages
+import gardenLawnImg from '../assets/images/pvz_garden_lawn_1792131024837.jpg';
+
 interface GameBoardProps {
   questions: Question[];
   level?: number;
@@ -166,7 +169,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 }) => {
   const currentLevelConfig = LEVEL_CONFIGS[level] || LEVEL_CONFIGS[1];
 
-  // Game state: initial sun is set to 75 (reduced from 150) so students actively answer quiz questions!
   const [sun, setSun] = useState<number>(75);
   const [selectedPlant, setSelectedPlant] = useState<PlantType | null>('peashooter');
   const [isShovelActive, setIsShovelActive] = useState<boolean>(false);
@@ -176,7 +178,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(Boolean(document.fullscreenElement));
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
 
-  // Sync fullscreen state with browser events
   useEffect(() => {
     const handleFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -185,13 +186,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  // Wave info
   const [currentWave, setCurrentWave] = useState<number>(1);
   const totalWaves = currentLevelConfig.totalWaves;
   const [waveProgress, setWaveProgress] = useState<number>(0);
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
 
-  // Plant cooldowns tracker
   const [cooldowns, setCooldowns] = useState<Record<PlantType, number>>({
     sunflower: 0,
     peashooter: 0,
@@ -202,7 +201,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     cherrybomb: 0
   });
 
-  // Entities
   const [plants, setPlants] = useState<PlantInstance[]>([]);
   const [zombies, setZombies] = useState<ZombieInstance[]>([]);
   const [projectiles, setProjectiles] = useState<ProjectileInstance[]>([]);
@@ -215,11 +213,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     { row: 4, triggered: false, active: true, x: 0 },
   ]);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-
-  // Hover tile
   const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
 
-  // Stats
   const statsRef = useRef<GameStats>({
     zombiesKilled: 0,
     sunsCollected: 0,
@@ -230,7 +225,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     level
   });
 
-  // Quiz state
   const [quizState, setQuizState] = useState<ActiveQuizState>({
     isOpen: false,
     question: null,
@@ -244,7 +238,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     source: 'user_boost'
   });
 
-  // Refs for animation loop
   const plantsRef = useRef(plants);
   const zombiesRef = useRef(zombies);
   const projectilesRef = useRef(projectiles);
@@ -259,7 +252,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const zombiesSpawnedInWaveRef = useRef<number>(0);
   const currentWaveRef = useRef(currentWave);
 
-  // Sync refs
   plantsRef.current = plants;
   zombiesRef.current = zombies;
   projectilesRef.current = projectiles;
@@ -272,7 +264,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   currentWaveRef.current = currentWave;
   statsRef.current.level = level;
 
-  // Add floating text
   const addFloatingText = useCallback((x: number, y: number, text: string, color = '#FACC15') => {
     setFloatingTexts(prev => [
       ...prev,
@@ -280,7 +271,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     ]);
   }, []);
 
-  // Open Quiz helper
   const triggerQuiz = useCallback((source: 'user_boost' | 'sun_orb' | 'wave_alert', rewardType: QuizRewardType = 'sun_boost') => {
     if (questions.length === 0) return;
     const randomQ = questions[Math.floor(Math.random() * questions.length)];
@@ -305,13 +295,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     });
   }, [questions]);
 
-  // Handle Quiz Result: Reduced sun reward from +100 to +30 to motivate answering more questions!
   const handleQuizAnswer = useCallback((_selectedOption: string, isCorrect: boolean) => {
     statsRef.current.questionsAnswered += 1;
     if (isCorrect) {
       statsRef.current.questionsCorrect += 1;
 
-      // Apply chosen reward: +30 Sun instead of +100
       if (quizState.rewardType === 'sun_boost') {
         setSun(s => s + 30);
         addFloatingText(50, 20, '+30 MATAHARI BONUS!', '#FACC15');
@@ -345,15 +333,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     setQuizState(prev => ({ ...prev, isOpen: false }));
   }, [quizState.rewardType, addFloatingText]);
 
-  // Sound toggle
   const handleToggleSound = () => {
     const muted = sound.toggleMute();
     setIsMuted(muted);
   };
 
-
-
-  // Fullscreen toggle
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
@@ -362,7 +346,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     }
   };
 
-  // Collect Sun: reduced from 25 to 15 to make student answers crucial!
   const handleCollectSun = (id: string, value: number, x: number, y: number, isQuizSun = false) => {
     sound.playSunCollect();
     setSun(prev => prev + value);
@@ -377,7 +360,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     }
   };
 
-  // Plant placement handler
   const handleCellClick = (row: number, col: number) => {
     if (isPaused || quizOpenRef.current || showExitConfirm) return;
 
@@ -444,7 +426,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     }
   };
 
-  // Keyboard shortcut listeners
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (quizOpenRef.current || showExitConfirm) return;
@@ -464,7 +445,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showExitConfirm]);
 
-  // Main 60fps Game Simulation Loop
   useEffect(() => {
     let animId: number;
     let lastTime = performance.now();
@@ -476,16 +456,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       if (!isPausedRef.current && !quizOpenRef.current) {
         const now = Date.now();
 
-        // 1. Clean old floating texts
         setFloatingTexts(prev => prev.filter(ft => now - ft.createdAt < 1200));
 
-        // 2. Natural Sun Drops from sky (value = 15)
         const skySunInterval = 8500 / gameSpeedRef.current;
         if (now - lastSkySunTimeRef.current > skySunInterval) {
           lastSkySunTimeRef.current = now;
           const x = 15 + Math.random() * 70;
           const targetY = 20 + Math.random() * 60;
-          // Higher chance for quiz suns (~42%) so students get to answer more questions!
           const isQuizSun = Math.random() < 0.42;
           setSuns(prev => [
             ...prev,
@@ -501,7 +478,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           ]);
         }
 
-        // Float suns down towards targetY
         setSuns(prev => prev.map(s => {
           if (s.y < s.targetY) {
             return { ...s, y: Math.min(s.y + dt * 25, s.targetY) };
@@ -509,7 +485,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           return s;
         }));
 
-        // 3. Sunflower sun production (value = 15)
         plantsRef.current.forEach(p => {
           if (p.type === 'sunflower') {
             const isBoosted = p.boostedUntil && p.boostedUntil > now;
@@ -533,7 +508,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           }
         });
 
-        // 4. Potato Mine arming check
         setPlants(prev => prev.map(p => {
           if (p.type === 'potatomine' && !p.isArmed && p.armedAt && now >= p.armedAt) {
             return { ...p, isArmed: true };
@@ -541,7 +515,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           return p;
         }));
 
-        // 5. Plant Shooting Logic
         plantsRef.current.forEach(p => {
           if (p.type === 'peashooter' || p.type === 'snowpea' || p.type === 'repeater') {
             const isBoosted = p.boostedUntil && p.boostedUntil > now;
@@ -588,7 +561,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           }
         });
 
-        // 6. Projectile movement & collision detection
         setProjectiles(prevProjectiles => {
           const nextProjectiles: ProjectileInstance[] = [];
 
@@ -641,7 +613,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           return nextProjectiles;
         });
 
-        // 7. Zombie Spawn Spawner based on Level Difficulty
         const zombiesPerWave = currentLevelConfig.zombiesPerWave[currentWaveRef.current - 1] || 15;
         const spawnInterval = Math.max(1800, currentLevelConfig.spawnIntervalBase - currentWaveRef.current * 700) / gameSpeedRef.current;
 
@@ -652,12 +623,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
             const spawnRow = Math.floor(Math.random() * ROWS);
 
-            // Determine zombie type based on Level and Wave
             let zType: ZombieType = 'regular';
             const roll = Math.random();
 
             if (level >= 5) {
-              // Boss Level 5: Heavily armored zombies
               if (roll < 0.45) zType = 'buckethead';
               else if (roll < 0.75) zType = 'conehead';
               else if (roll < 0.90) zType = 'speedy';
@@ -674,11 +643,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               if (roll < 0.40) zType = 'conehead';
               else if (roll < 0.55) zType = 'speedy';
             } else {
-              // Level 1: Mostly regular, occasional conehead on last wave
               if (currentWaveRef.current >= 3 && roll < 0.25) zType = 'conehead';
             }
 
-            // Scale HP and speed by level multiplier
             const hpMult = currentLevelConfig.hpMultiplier;
             const spdMult = currentLevelConfig.speedMultiplier;
 
@@ -712,7 +679,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             setWaveProgress(zombiesSpawnedInWaveRef.current / zombiesPerWave);
           }
         } else {
-          // Wave finished when all zombies in current wave are killed
           if (zombiesRef.current.length === 0) {
             if (currentWaveRef.current < totalWaves) {
               const nextWave = currentWaveRef.current + 1;
@@ -725,7 +691,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
               triggerQuiz('wave_alert', nextWave >= 3 ? 'freeze_all' : 'sun_boost');
             } else {
-              // VICTORY!
               sound.playVictory();
               confetti({ particleCount: 120, spread: 80 });
               onVictory(statsRef.current);
@@ -733,7 +698,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           }
         }
 
-        // 8. Zombie Movement & Eating Plants
         setZombies(prevZombies => {
           return prevZombies.map(z => {
             const isFrozen = z.isFrozen && now < z.frozenUntil;
@@ -742,7 +706,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             const zombieCol = Math.floor((z.x - 2) / (100 / COLS));
             const plantOnCell = plantsRef.current.find(p => p.row === z.row && p.col === zombieCol);
 
-            // Potato Mine detonation
             if (plantOnCell && plantOnCell.type === 'potatomine' && plantOnCell.isArmed) {
               sound.playExplosion();
               setPlants(p => p.filter(item => item.id !== plantOnCell.id));
@@ -775,7 +738,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
             const nextX = z.x - effectiveSpeed * dt;
 
-            // Lawnmower collision
             const mower = lawnMowersRef.current.find(m => m.row === z.row);
             if (nextX <= 7 && mower && mower.active && !mower.triggered) {
               sound.playLawnMower();
@@ -783,7 +745,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               addFloatingText(8, (z.row + 0.5) * (100 / ROWS), '🚜 PEMOTONG RUMPUT AKTIF!', '#EF4444');
             }
 
-            // Game Over breach
             if (nextX <= -2) {
               sound.playGameOver();
               onGameOver(statsRef.current);
@@ -798,7 +759,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           }).filter(z => z.hp > 0);
         });
 
-        // 9. Active Lawnmowers sweep
         setLawnMowers(prevMowers => {
           return prevMowers.map(m => {
             if (m.triggered && m.active) {
@@ -834,10 +794,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       {/* TOP HUD BAR */}
       <header className="w-full bg-stone-900/95 border-b border-amber-900/60 px-3 py-2 flex items-center justify-between gap-3 shadow-md z-20 shrink-0">
         
-        {/* Left cluster: Sun Counter & Seed Packet Deck */}
         <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto py-1 scrollbar-none">
           
-          {/* Sun Bank */}
           <div className="flex items-center gap-2 bg-amber-950/80 border-2 border-amber-600/80 rounded-xl px-2.5 py-1 shadow-inner shrink-0">
             <SunSprite size={24} />
             <div className="flex flex-col">
@@ -848,7 +806,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           </div>
 
-          {/* Plant Seed Packets */}
           <div className="flex items-center gap-1.5 shrink-0">
             {(['sunflower', 'peashooter', 'snowpea', 'wallnut', 'repeater', 'potatomine', 'cherrybomb'] as PlantType[]).map((type) => {
               const readyTime = cooldowns[type] || 0;
@@ -872,7 +829,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             })}
           </div>
 
-          {/* Shovel Tool */}
           <button
             type="button"
             onClick={() => {
@@ -891,10 +847,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </button>
         </div>
 
-        {/* Center/Right cluster: Student, Level, Quiz Booster, Zoom, Exit */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
-          {/* Student Profile Info */}
           {studentProfile && (
             <div className="hidden md:flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-600/70 rounded-xl px-2.5 py-1 text-xs text-emerald-300">
               <span className="font-semibold">{studentProfile.name}</span>
@@ -902,7 +856,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           )}
 
-          {/* Level Badge (1-10) */}
           <div 
             title={currentLevelConfig.name}
             className="flex items-center gap-1.5 px-3 py-1 bg-amber-950/90 border border-amber-500/70 rounded-xl text-xs font-bold text-amber-300 shadow-sm"
@@ -911,7 +864,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             <span>Level {level}/10</span>
           </div>
 
-          {/* Question / Quiz Super Booster Button: now gives +30 Sun */}
           <button
             type="button"
             onClick={() => triggerQuiz('user_boost', 'sun_boost')}
@@ -923,7 +875,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             <span className="sm:hidden">Kuis</span>
           </button>
 
-          {/* Tombol Fullscreen / Exit Fullscreen */}
           <button
             type="button"
             onClick={handleToggleFullscreen}
@@ -934,7 +885,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             <span className="hidden sm:inline">{isFullscreen ? 'Keluar Fullscreen' : 'Layar Penuh'}</span>
           </button>
 
-          {/* Game Speed Toggle */}
           <button
             type="button"
             onClick={() => setGameSpeed(s => (s === 1 ? 1.5 : s === 1.5 ? 2 : 1))}
@@ -944,7 +894,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             {gameSpeed}x
           </button>
 
-          {/* Audio toggle */}
           <button
             type="button"
             onClick={handleToggleSound}
@@ -954,7 +903,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
           </button>
 
-          {/* Pause / Resume */}
           <button
             type="button"
             onClick={() => setIsPaused(prev => !prev)}
@@ -964,7 +912,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             {isPaused ? <Play className="w-4 h-4 text-emerald-400" /> : <Pause className="w-4 h-4" />}
           </button>
 
-          {/* Tombol Keluar (Exit Game) */}
           <button
             type="button"
             onClick={() => setShowExitConfirm(true)}
@@ -978,19 +925,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
       </header>
 
-      {/* LAWN PLAYFIELD CONTAINER (With Zoom Scale Support) */}
+      {/* LAWN PLAYFIELD CONTAINER */}
       <div className="relative flex-1 w-full overflow-hidden flex items-center justify-center p-2 sm:p-4 bg-stone-900">
         
-        {/* Lawn Board Frame */}
         <div 
           className="relative w-full max-w-6xl aspect-[16/9] max-h-[85vh] rounded-2xl overflow-hidden border-4 border-amber-950 shadow-2xl select-none"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.2)), url('/src/assets/images/pvz_garden_lawn_1792131024837.jpg')`,
+            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.2)), url(${gardenLawnImg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
-          {/* 5x9 Lawn Grid Cells */}
           <div className="absolute inset-0 grid grid-rows-5 grid-cols-9">
             {Array.from({ length: ROWS }).map((_, r) =>
               Array.from({ length: COLS }).map((_, c) => {
@@ -1027,7 +972,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             )}
           </div>
 
-          {/* Emergency Lawnmowers (Row 0 to 4) */}
           {lawnMowers.map(m => {
             if (!m.active && !m.triggered) return null;
             const topPercent = (m.row + 0.1) * (100 / ROWS);
@@ -1049,7 +993,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             );
           })}
 
-          {/* Plant Entities */}
           {plants.map(p => {
             const leftPercent = (p.col / COLS) * 100;
             const topPercent = (p.row / ROWS) * 100;
@@ -1094,7 +1037,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             );
           })}
 
-          {/* Projectiles */}
           {projectiles.map(pr => {
             const topPercent = (pr.row + 0.38) * (100 / ROWS);
             return (
@@ -1112,7 +1054,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             );
           })}
 
-          {/* Zombies */}
           {zombies.map(z => {
             const topPercent = (z.row + 0.05) * (100 / ROWS);
             const isHit = Date.now() < z.hitFlashUntil;
@@ -1150,7 +1091,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             );
           })}
 
-          {/* Floating Collectible Suns */}
           {suns.map(s => (
             <div
               key={s.id}
@@ -1176,7 +1116,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           ))}
 
-          {/* Floating Damage & Sun Texts */}
           {floatingTexts.map(ft => (
             <div
               key={ft.id}
@@ -1192,7 +1131,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           ))}
 
-          {/* Wave Alert Toast: sleek, discrete, non-intrusive top pill */}
           {waveAnnouncement && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none z-40 animate-in fade-in slide-in-from-top-3 duration-200">
               <div className="bg-stone-900/90 border-2 border-amber-500/80 rounded-full px-5 py-1.5 shadow-2xl backdrop-blur-md flex items-center gap-2">
@@ -1204,7 +1142,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           )}
 
-          {/* Pause Overlay */}
           {isPaused && (
             <div className="absolute inset-0 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-6 text-center space-y-4">
               <h2 className="text-3xl font-black text-amber-300">Permainan Dijeda</h2>
@@ -1232,7 +1169,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           )}
 
-          {/* Exit Confirmation Dialog (Tombol Keluar) */}
           {showExitConfirm && (
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-50 p-6 text-center animate-in zoom-in-95 duration-150">
               <div className="w-full max-w-md bg-stone-900 border-2 border-red-600/80 rounded-3xl p-6 shadow-2xl space-y-5 text-stone-100">
@@ -1304,13 +1240,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
         </div>
 
-
-
-
-
       </div>
 
-      {/* QUIZ OVERLAY MODAL */}
       {quizState.isOpen && (
         <QuizModalOverlay
           quizState={quizState}
@@ -1323,5 +1254,4 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   );
 };
 
-// Internal bridge for quiz modal
 import { QuizModal as QuizModalOverlay } from './QuizModal';
