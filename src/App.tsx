@@ -31,7 +31,8 @@ import {
   Minimize2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-
+import titleBannerImg from './assets/images/pvz_title_banner_1792131025537.jpg';
+import gardenLawnImg from './assets/images/pvz_garden_lawn_1792131024837.jpg';
 export default function App() {
   const [screen, setScreen] = useState<GameScreen>('TITLE');
   const [questions, setQuestions] = useState<Question[]>(() => getSavedQuestions());
