@@ -10,7 +10,6 @@ import {
 } from '../utils/teacherStorage';
 import { parseSpreadsheetData } from '../utils/spreadsheetParser';
 import { copyToClipboard } from '../utils/clipboard';
-import { SpreadsheetTemplateModal } from './SpreadsheetTemplateModal';
 import { 
   X, 
   GraduationCap, 
@@ -31,6 +30,13 @@ import {
   Share2
 } from 'lucide-react';
 
+// ============================================================
+// TEMPLATE SPREADSHEET — SUDAH DIISI DENGAN ID ANDA ✅
+// ============================================================
+const TEMPLATE_SPREADSHEET_ID = '10YdkL93c9iIFD8QxY4o1wkyEBy8aVcPSvzvCAFXeFzs';
+const TEMPLATE_SPREADSHEET_COPY_URL = `https://docs.google.com/spreadsheets/d/${TEMPLATE_SPREADSHEET_ID}/copy`;
+const TEMPLATE_SPREADSHEET_VIEW_URL = `https://docs.google.com/spreadsheets/d/${TEMPLATE_SPREADSHEET_ID}/edit`;
+
 interface TeacherPortalModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,7 +54,7 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
   const [password, setPassword] = useState<string>('');
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Portal tabs: 'create_token' | 'manage_tokens' | 'submissions'
+  // Portal tabs
   const [activeTab, setActiveTab] = useState<'create_token' | 'manage_tokens' | 'submissions'>('create_token');
 
   // Create Token Form state
@@ -61,7 +67,6 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
   const [copiedTokenCode, setCopiedTokenCode] = useState<boolean>(false);
   const [copiedTokenMsg, setCopiedTokenMsg] = useState<boolean>(false);
   const [copiedRowToken, setCopiedRowToken] = useState<string | null>(null);
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState<boolean>(false);
 
   // Direct paste fallback mode
   const [showDirectPaste, setShowDirectPaste] = useState<boolean>(false);
@@ -79,6 +84,18 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // Handler: buka template spreadsheet (mode "make a copy") di tab baru
+  // Teknik anchor-click: tidak bisa diblokir popup blocker
+  const handleOpenTemplateSpreadsheet = () => {
+    const link = document.createElement('a');
+    link.href = TEMPLATE_SPREADSHEET_COPY_URL;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,7 +235,7 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
           </button>
         </div>
 
-        {/* 1. LOGIN SCREEN (If not authenticated) */}
+        {/* 1. LOGIN SCREEN */}
         {!isAuthenticated ? (
           <div className="p-8 flex flex-col items-center justify-center text-center space-y-6 my-auto">
             <div className="w-16 h-16 rounded-2xl bg-stone-950 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-inner">
@@ -275,7 +292,6 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
                   Masuk Portal Guru
                 </button>
               </div>
-             
             </form>
           </div>
         ) : (
@@ -361,7 +377,6 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                          {/* 1. Salin Kode Token Saja */}
                           <button
                             type="button"
                             onClick={() => handleCopyTokenCode(createdTokenPkg.token)}
@@ -372,7 +387,6 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
                             <span>{copiedTokenCode ? 'Kode Tersalin!' : 'Salin Kode Token'}</span>
                           </button>
 
-                          {/* 2. Salin Pesan Lengkap untuk Siswa */}
                           <button
                             type="button"
                             onClick={() => handleCopyTokenMessage(createdTokenPkg)}
@@ -414,20 +428,22 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
                           </span>
                         </h4>
                         <p className="text-xs text-stone-300 leading-snug">
-                          Klik untuk melihat format siap isi & salin otomatis ke akun Google Drive Anda.
+                          Klik untuk membuka template di Google Sheets, lalu klik <b>"Make a copy"</b> — file otomatis masuk ke Drive Anda.
                         </p>
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsTemplateModalOpen(true)}
+                    {/* FIX: Tombol diubah menjadi <a> agar PASTI terbuka, tidak bisa diblokir popup blocker */}
+                    <a
+                      href={TEMPLATE_SPREADSHEET_COPY_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="w-full sm:w-auto px-4 py-2.5 text-xs font-black bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-stone-950 rounded-xl flex items-center justify-center gap-2 shadow-md transition-transform active:scale-95 cursor-pointer shrink-0"
                     >
                       <FileSpreadsheet className="w-4 h-4" />
                       <span>Buka Template Spreadsheet</span>
                       <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
+                    </a>
                   </div>
 
                   {/* Instructions */}
@@ -436,17 +452,20 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
                       <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
                         Cara Menggunakan Link Google Spreadsheet:
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsTemplateModalOpen(true)}
+                      {/* FIX: Link kecil juga diubah ke <a> */}
+                      <a
+                        href={TEMPLATE_SPREADSHEET_COPY_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-xs text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
                       >
                         <FileSpreadsheet className="w-3.5 h-3.5" />
                         <span>Lihat Template Soal</span>
-                      </button>
+                      </a>
                     </div>
                     <ol className="text-xs text-stone-300 space-y-1 list-decimal list-inside">
-                      <li>Buka file Google Sheets Anda (<b>Kolom A</b>: Soal, <b>Kolom B</b>: Jawaban Benar, <b>Kolom C, D, E</b>: Pengecoh). Atau klik tombol <b>Template Spreadsheet</b> di atas.</li>
+                      <li>Klik tombol <b>Buka Template Spreadsheet</b> di atas → di Google Sheets klik <b>File → Make a copy</b> untuk menyimpan ke Drive Anda.</li>
+                      <li>Isi soal di file salinan tersebut (<b>Kolom A</b>: Soal, <b>Kolom B</b>: Jawaban Benar, <b>Kolom C, D, E</b>: Pengecoh).</li>
                       <li>Klik tombol <b>Bagikan (Share)</b> di kanan atas Google Sheets → ubah Akses Umum menjadi <b>"Siapa saja yang memiliki link (Anyone with the link)"</b>.</li>
                       <li>Salin link Google Sheets tersebut dan tempel di bawah ini, lalu klik <b>Periksa & Ambil Soal</b>!</li>
                     </ol>
@@ -567,7 +586,6 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
                           )}
                         </div>
 
-                        {/* Save and Generate Token CTA */}
                         <div className="pt-2 flex justify-end">
                           <button
                             type="button"
@@ -659,7 +677,7 @@ export const TeacherPortalModal: React.FC<TeacherPortalModalProps> = ({
                 </div>
               )}
 
-              {/* TAB 3: SUBMISSIONS (REKAP NILAI SISWA) */}
+              {/* TAB 3: SUBMISSIONS */}
               {activeTab === 'submissions' && (
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
