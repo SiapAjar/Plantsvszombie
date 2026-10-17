@@ -219,9 +219,9 @@ export default function App() {
           {/* Center Title Lockup */}
           <div className="flex flex-col items-center text-center space-y-6 w-full max-w-4xl z-10 my-auto py-4 px-2">
             <div className="space-y-2.5 flex flex-col items-center w-full">
-              <span className="text-xs uppercase tracking-widest text-amber-400 font-bold bg-amber-950/80 px-3.5 py-1 rounded-full border border-amber-600/40">
-                Developed By Misbahul Munir
-              </span>
+              <span className="text-xs tracking-wide text-amber-400 font-bold bg-amber-950/80 px-3.5 py-1 rounded-full border border-amber-600/40">
+  Developed By Misbahul Munir
+</span>
               <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-amber-400 to-amber-600 drop-shadow-2xl tracking-tight whitespace-nowrap">
                 PLANTS VS ZOMBIES
               </h1>
