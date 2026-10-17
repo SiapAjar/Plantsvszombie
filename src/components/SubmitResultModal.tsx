@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
 import { GameStats, StudentProfile, StudentSubmission } from '../types/game';
-import { saveStudentSubmission, getTeacherTokens } from '../utils/teacherStorage';
+import { saveStudentSubmission } from '../utils/teacherStorage';
 import { 
   X, 
   Send, 
   CheckCircle2, 
   User, 
   KeyRound, 
-  Copy, 
   Check, 
-  Share2, 
-  Trophy, 
-  Skull,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 
 interface SubmitResultModalProps {
@@ -52,7 +49,7 @@ export const SubmitResultModal: React.FC<SubmitResultModalProps> = ({
     }
 
     const submission: StudentSubmission = {
-      id: `sub-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `sub-manual-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       studentName: studentName.trim(),
       token: (token.trim() || 'GURU-101').toUpperCase(),
       quizTitle: 'Kuis PvZ Edukasi',
@@ -67,7 +64,10 @@ export const SubmitResultModal: React.FC<SubmitResultModalProps> = ({
       timestamp: Date.now()
     };
 
+    // Ini akan memperbarui data yang sudah disimpan otomatis oleh App.tsx 
+    // (jika namanya sama) atau menambahkan data baru jika siswa mengubah namanya.
     saveStudentSubmission(submission);
+    
     setIsSubmitted(true);
     setErrorMsg(null);
     if (onSubmissionSuccess) onSubmissionSuccess();
@@ -105,10 +105,10 @@ export const SubmitResultModal: React.FC<SubmitResultModalProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-black text-emerald-300">
-                Kirim Hasil Permainan ke Guru
+                Laporan Hasil Permainan
               </h3>
               <p className="text-xs text-stone-400">
-                Laporkan perolehan skor kuis, zombi, dan matahari
+                Periksa namamu dan salin laporan untuk dikirim ke Guru
               </p>
             </div>
           </div>
@@ -118,6 +118,14 @@ export const SubmitResultModal: React.FC<SubmitResultModalProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Info Auto-Save Banner */}
+        <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-600/50 flex items-start gap-2">
+          <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-200 leading-snug">
+            <b>Nilaimu sudah otomatis masuk ke Papan Peringkat!</b> Form di bawah ini bisa kamu gunakan untuk mengoreksi nama/token jika salah ketik, lalu salin laporan ke WA Guru.
+          </p>
         </div>
 
         {/* Performance Metrics Card */}
@@ -191,8 +199,8 @@ export const SubmitResultModal: React.FC<SubmitResultModalProps> = ({
                 type="submit"
                 className="flex-1 py-3 text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-stone-950 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer"
               >
-                <Send className="w-4 h-4" />
-                Kirim ke Rekap Guru
+                <CheckCircle2 className="w-4 h-4" />
+                Simpan Perbaikan Data
               </button>
 
               <button
@@ -214,10 +222,10 @@ export const SubmitResultModal: React.FC<SubmitResultModalProps> = ({
 
             <div className="space-y-1">
               <h4 className="text-base font-bold text-emerald-300">
-                Hasil Berhasil Dikirimkan ke Guru!
+                Data Berhasil Disimpan!
               </h4>
               <p className="text-xs text-stone-300">
-                Nilaimu telah tercatat di rekapitulasi Token <b>{token.toUpperCase()}</b>.
+                Nama <b>{studentName}</b> telah tercatat untuk Token <b>{token.toUpperCase()}</b>.
               </p>
             </div>
 

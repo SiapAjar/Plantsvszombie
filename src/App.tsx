@@ -4,14 +4,16 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { GameScreen, GameStats, Question, StudentProfile, TeacherTokenPackage } from './types/game';
+import { GameScreen, GameStats, Question, StudentProfile, TeacherTokenPackage, StudentSubmission } from './types/game'; // <-- TAMBAHAN StudentSubmission
 import { GameBoard } from './components/GameBoard';
 import { SpreadsheetModal } from './components/SpreadsheetModal';
 import { StudentLoginModal } from './components/StudentLoginModal';
 import { TeacherPortalModal } from './components/TeacherPortalModal';
 import { SubmitResultModal } from './components/SubmitResultModal';
 import { AchievementSystem } from './components/AchievementSystem';
+import { StudentLeaderboard } from './components/StudentLeaderboard';
 import { getSavedQuestions, saveQuestions } from './utils/spreadsheetParser';
+import { saveStudentSubmission } from './utils/teacherStorage'; // <-- TAMBAHAN AUTO-SAVE IMPORT
 import { sound } from './utils/audio';
 
 // Import aset gambar agar otomatis terdeteksi dengan benar oleh Vite / GitHub Pages
@@ -107,6 +109,39 @@ export default function App() {
     setScreen('VICTORY');
     confetti({ particleCount: 130, spread: 90 });
   };
+
+  // ==========================================
+  // AUTO-SAVE NILAI SAAT GAME BERAKHIR
+  // ==========================================
+  useEffect(() => {
+    if (screen === 'VICTORY' || screen === 'GAME_OVER') {
+      // Pastikan siswa sudah login dan tokennya valid
+      if (studentProfile && activeTokenPkg) {
+        const accuracy = gameStats.questionsAnswered > 0 
+          ? Math.round((gameStats.questionsCorrect / gameStats.questionsAnswered) * 100) 
+          : 0;
+
+        const autoSubmission: StudentSubmission = {
+          id: `sub-auto-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          studentName: studentProfile.name,
+          token: activeTokenPkg.token,
+          quizTitle: activeTokenPkg.title || 'Kuis PvZ Edukasi',
+          zombiesKilled: gameStats.zombiesKilled,
+          sunsCollected: gameStats.sunsCollected,
+          questionsAnswered: gameStats.questionsAnswered,
+          questionsCorrect: gameStats.questionsCorrect,
+          accuracy: accuracy,
+          gameOutcome: screen === 'VICTORY' ? 'victory' : 'game_over',
+          waveReached: gameStats.wave,
+          level: gameStats.level || selectedLevel,
+          timestamp: Date.now()
+        };
+
+        // Simpan otomatis ke localStorage agar Leaderboard langsung terisi
+        saveStudentSubmission(autoSubmission);
+      }
+    }
+  }, [screen, studentProfile, activeTokenPkg, gameStats, selectedLevel]);
 
   // Student login success with chosen level
   const handleStudentLoginSuccess = (profile: StudentProfile, tokenPkg: TeacherTokenPackage, lvl?: number) => {
@@ -325,6 +360,18 @@ export default function App() {
             {/* Achievement System Badges */}
             <AchievementSystem stats={gameStats} />
 
+            {/* ========================================================== */}
+            {/* PAPAN PERINGKAT (VICTORY) */}
+            {/* ========================================================== */}
+            <div className="w-full pt-2">
+              <StudentLeaderboard 
+                token={activeTokenPkg?.token || ''}
+                currentStudentName={studentProfile?.name}
+                quizTitle={activeTokenPkg?.title}
+                maxDisplay={5}
+              />
+            </div>
+
             {/* Button to Submit Results to Teacher */}
             <button
               type="button"
@@ -375,14 +422,14 @@ export default function App() {
       {/* 4. GAME OVER SCREEN */}
       {screen === 'GAME_OVER' && (
         <div 
-          className="relative w-full h-full flex items-center justify-center p-4 sm:p-6 bg-stone-950/90"
+          className="relative w-full h-full flex items-center justify-center p-4 sm:p-6 bg-stone-950/90 overflow-y-auto"
           style={{
             backgroundImage: `linear-gradient(to bottom, rgba(220,38,38,0.3), rgba(0,0,0,0.9)), url(${titleBannerImg})`,
             backgroundSize: 'cover'
           }}
         >
-          <div className="relative w-full max-w-lg bg-stone-900/95 border-2 border-red-600 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-red-950/80 border-2 border-red-500 flex items-center justify-center text-red-400 shadow-lg">
+          <div className="relative w-full max-w-lg bg-stone-900/95 border-2 border-red-600 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center space-y-4 my-auto">
+            <div className="w-16 h-16 rounded-full bg-red-950/80 border-2 border-red-500 flex items-center justify-center text-red-400 shadow-lg shrink-0">
               <Skull className="w-8 h-8" />
             </div>
 
@@ -419,6 +466,18 @@ export default function App() {
                 <p className="text-base font-mono font-bold text-yellow-400">{gameStats.sunsCollected}</p>
                 <span className="text-[10px] text-stone-500">Terkumpul</span>
               </div>
+            </div>
+
+            {/* ========================================================== */}
+            {/* PAPAN PERINGKAT (GAME OVER) */}
+            {/* ========================================================== */}
+            <div className="w-full pt-2">
+              <StudentLeaderboard 
+                token={activeTokenPkg?.token || ''}
+                currentStudentName={studentProfile?.name}
+                quizTitle={activeTokenPkg?.title}
+                maxDisplay={5}
+              />
             </div>
 
             {/* Button to Submit Results to Teacher */}

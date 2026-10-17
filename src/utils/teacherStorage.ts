@@ -1,170 +1,132 @@
-import { Question, StudentSubmission, TeacherTokenPackage } from '../types/game';
-import { parseSpreadsheetData, PRESET_BIOLOGI } from './spreadsheetParser';
+import { Question, TeacherTokenPackage, StudentSubmission } from '../types/game';
 
-const TEACHER_TOKENS_KEY = 'pvz_teacher_tokens';
-const SUBMISSIONS_KEY = 'pvz_student_submissions';
+const TOKENS_KEY = 'pvs_teacher_tokens';
+const SUBMISSIONS_KEY = 'pvs_student_submissions';
 
-/**
- * Generate a clean, student-friendly 4-6 char token like GURU-4821 or PVZ-319
- */
-export function generateTokenCode(prefix = 'GURU'): string {
-  const num = Math.floor(1000 + Math.random() * 9000);
-  return `${prefix}-${num}`;
-}
-
-/**
- * Extract Google Sheets ID from URL and build CSV export URL
- */
-export function convertGoogleSheetsUrlToCsv(rawUrl: string): string {
-  const trimmed = rawUrl.trim();
-  
-  // If already a direct CSV/export URL
-  if (trimmed.includes('output=csv') || trimmed.includes('format=csv') || trimmed.includes('tqx=out:csv')) {
-    return trimmed;
-  }
-
-  // Extract Sheet ID from standard Google Sheets URL:
-  // e.g. https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit...
-  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (match && match[1]) {
-    const sheetId = match[1];
-    // Google Visualization API CSV export endpoint (works reliably on public sheets)
-    return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
-  }
-
-  return trimmed;
-}
-
-/**
- * Fetch and parse spreadsheet from public Google Sheets URL
- */
-export async function fetchQuestionsFromGoogleSheets(url: string): Promise<{ questions: Question[]; error?: string }> {
+// ==========================================
+// 1. FUNGSI UNTUK PORTAL GURU (TOKEN & SOAL)
+// ==========================================
+export const getTeacherTokens = (): TeacherTokenPackage[] => {
   try {
-    const csvUrl = convertGoogleSheetsUrlToCsv(url);
+    const data = localStorage.getItem(TOKENS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+};
+
+export const saveTeacherTokens = (tokens: TeacherTokenPackage[]) => {
+  localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens));
+};
+
+export const generateTokenCode = (prefix: string = 'GURU'): string => {
+  const randomNum = Math.floor(1000 + Math.random() * 9000);
+  return `${prefix}-${randomNum}`;
+};
+
+export const findTokenPackage = (tokenCode: string): TeacherTokenPackage | null => {
+  const tokens = getTeacherTokens();
+  return tokens.find(t => t.token.toUpperCase() === tokenCode.trim().toUpperCase()) || null;
+};
+
+export const fetchQuestionsFromGoogleSheets = async (url: string): Promise<{ questions: Question[], error?: string }> => {
+  try {
+    const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match) return { questions: [], error: 'URL Google Spreadsheet tidak valid.' };
+    const sheetId = match[1];
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
     const response = await fetch(csvUrl);
     
-    if (!response.ok) {
-      return {
-        questions: [],
-        error: `Gagal mengunduh spreadsheet (Status: ${response.status}). Pastikan izin spreadsheet disetel ke: "Siapa saja yang memiliki link dapat melihat".`
-      };
-    }
+    if (!response.ok) return { questions: [], error: 'Gagal mengunduh. Pastikan spreadsheet di-share "Anyone with the link".' };
 
     const csvText = await response.text();
-    const parsed = parseSpreadsheetData(csvText, true);
-
-    if (parsed.questions.length === 0) {
-      return {
-        questions: [],
-        error: parsed.errors.length > 0 
-          ? parsed.errors.join(' ') 
-          : 'Spreadsheet berhasil diunduh namun tidak ditemukan baris soal yang valid (Kolom A: Pertanyaan, Kolom B: Jawaban Benar, Kolom C, D, E: Pengecoh).'
-      };
-    }
-
-    return { questions: parsed.questions };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      questions: [],
-      error: `Koneksi gagal (${message}). Pastikan link benar dan spreadsheet dapat diakses publik, atau gunakan fitur tempel langsung.`
-    };
-  }
-}
-
-/**
- * Get all teacher token packages
- */
-export function getTeacherTokens(): TeacherTokenPackage[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(TEACHER_TOKENS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+    const lines = csvText.split('\n').filter(line => line.trim() !== '');
+    const questions: Question[] = [];
+    
+    // Lewati baris pertama (header)
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(/[,\t]/).map(cell => cell.replace(/^"|"$/g, '').trim());
+      if (row.length >= 2 && row[0] && row[1]) {
+        questions.push({
+          question: row[0],
+          correctAnswer: row[1],
+          distractor1: row[2] || '',
+          distractor2: row[3] || '',
+          distractor3: row[4] || ''
+        });
       }
     }
-  } catch (e) {
-    console.error('Failed to load teacher tokens:', e);
+    
+    if (questions.length === 0) return { questions: [], error: 'Tidak ada soal valid yang ditemukan.' };
+    return { questions };
+  } catch (err) {
+    return { questions: [], error: 'Terjadi kesalahan jaringan.' };
   }
+};
 
-  // Create default starter token if none exists
-  const defaultPackage: TeacherTokenPackage = {
-    token: 'GURU-101',
-    title: 'Kuis Biologi Tumbuhan (Kelas 5)',
-    spreadsheetUrl: 'Preset Bawaan',
-    questions: PRESET_BIOLOGI,
-    createdAt: Date.now() - 3600000
-  };
-  saveTeacherTokens([defaultPackage]);
-  return [defaultPackage];
-}
-
-/**
- * Save teacher token packages
- */
-export function saveTeacherTokens(tokens: TeacherTokenPackage[]): void {
-  if (typeof window === 'undefined') return;
+// ==========================================
+// 2. FUNGSI UNTUK NILAI SISWA (SUBMISSIONS)
+// ==========================================
+export const getStudentSubmissions = (): StudentSubmission[] => {
   try {
-    localStorage.setItem(TEACHER_TOKENS_KEY, JSON.stringify(tokens));
-  } catch (e) {
-    console.error('Failed to save teacher tokens:', e);
+    const data = localStorage.getItem(SUBMISSIONS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+};
+
+// Fungsi ini persis seperti yang dipanggil oleh SubmitResultModal.tsx Anda
+export const saveStudentSubmission = (submission: StudentSubmission) => {
+  const subs = getStudentSubmissions();
+  
+  // Cek apakah siswa ini sudah punya data dengan skor yang persis sama dalam 10 detik terakhir
+  // (Mencegah duplikat jika tersimpan otomatis lalu siswa klik "Kirim" lagi)
+  const existingIndex = subs.findIndex(
+    s => s.studentName === submission.studentName && 
+         s.token === submission.token &&
+         s.accuracy === submission.accuracy &&
+         s.zombiesKilled === submission.zombiesKilled &&
+         Math.abs(s.timestamp - submission.timestamp) < 10000 // toleransi 10 detik
+  );
+  
+  if (existingIndex >= 0) {
+    // Jika sudah ada, perbarui datanya (bukan ditambah baru)
+    subs[existingIndex] = submission;
+  } else {
+    // Jika belum ada, tambahkan sebagai data baru
+    subs.push(submission);
   }
-}
+  
+  localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(subs));
+};
 
-/**
- * Find teacher package by token (case insensitive)
- */
-export function findTokenPackage(tokenInput: string): TeacherTokenPackage | null {
-  const tokens = getTeacherTokens();
-  const cleanInput = tokenInput.trim().toUpperCase();
-  return tokens.find(t => t.token.toUpperCase() === cleanInput) || null;
-}
+export const exportSubmissionsToCsv = (subs: StudentSubmission[]): string => {
+  const headers = ['Nama Siswa', 'Token', 'Benar', 'Total Soal', 'Akurasi (%)', 'Zombi', 'Matahari', 'Hasil', 'Waktu'];
+  const rows = subs.map(s => [
+    s.studentName, s.token, s.questionsCorrect, s.questionsAnswered,
+    s.accuracy, s.zombiesKilled, s.sunsCollected,
+    s.gameOutcome === 'victory' ? 'Menang' : 'Kalah',
+    new Date(s.timestamp).toLocaleString('id-ID')
+  ]);
+  return [headers.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
+};
 
-/**
- * Get all student submissions
- */
-export function getStudentSubmissions(): StudentSubmission[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(SUBMISSIONS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
+// ==========================================
+// 3. FUNGSI UNTUK SPREADSHEET PARSER MANUAL
+// ==========================================
+export const parseSpreadsheetData = (text: string, isDirectPaste: boolean = false): Question[] => {
+  const lines = text.split('\n').filter(line => line.trim() !== '');
+  const questions: Question[] = [];
+  const startIndex = isDirectPaste ? 0 : 1; 
+
+  for (let i = startIndex; i < lines.length; i++) {
+    const row = lines[i].split(/[,\t]/).map(cell => cell.replace(/^"|"$/g, '').trim());
+    if (row.length >= 2 && row[0] && row[1]) {
+      questions.push({
+        question: row[0],
+        correctAnswer: row[1],
+        distractor1: row[2] || '',
+        distractor2: row[3] || '',
+        distractor3: row[4] || ''
+      });
     }
-  } catch (e) {
-    console.error('Failed to load student submissions:', e);
   }
-  return [];
-}
-
-/**
- * Save student submission
- */
-export function saveStudentSubmission(submission: StudentSubmission): void {
-  if (typeof window === 'undefined') return;
-  try {
-    const current = getStudentSubmissions();
-    const updated = [submission, ...current];
-    localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to save student submission:', e);
-  }
-}
-
-/**
- * Export student submissions to CSV table for teacher download
- */
-export function exportSubmissionsToCsv(submissions: StudentSubmission[]): string {
-  const header = 'Tanggal\tNama Siswa\tToken Kuis\tJudul Kuis\tLevel\tHasil Game\tSoal Benar\tTotal Soal\tAkurasi (%)\tZombi Dikalahkan\tMatahari Terkumpul';
-  const rows = submissions.map(s => {
-    const dateStr = new Date(s.timestamp).toLocaleString('id-ID');
-    const outcomeStr = s.gameOutcome === 'victory' ? 'Menang' : `Kalah (Gelombang ${s.waveReached})`;
-    const levelStr = `Level ${s.level || 1}`;
-    return `"${dateStr}"\t"${s.studentName}"\t"${s.token}"\t"${s.quizTitle}"\t"${levelStr}"\t"${outcomeStr}"\t${s.questionsCorrect}\t${s.questionsAnswered}\t${s.accuracy}%\t${s.zombiesKilled}\t${s.sunsCollected}`;
-  });
-  return [header, ...rows].join('\n');
-}
+  return questions;
+};
